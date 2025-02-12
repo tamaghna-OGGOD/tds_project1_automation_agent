@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+aiohttp
+python-multipart
+pillow
+pandas
+sqlite3
+markdown
+beautifulsoup4
