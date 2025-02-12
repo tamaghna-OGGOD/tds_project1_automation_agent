@@ -1,12 +1,25 @@
 #!/bin/bash
 
-# Find the 10 most recent .log files, sorted by modification time (newest first)
-find ../../data/logs/ -name "*.log" -type f -printf "%T@ %p\n" | sort -nr | head -n 10 | cut -d' ' -f2 > recent_logs.txt
+# Define log directory
+LOG_DIR="D:\work\gramener\anand_assignment\project1\tds_project1_automation_agent\data\logs"
 
-# Loop through the recent log files and extract the first line
-for log_file in $(cat recent_logs.txt); do
-  head -n 1 "$log_file" >> ../../data/logs-recent.txt
+# Define output file
+OUTPUT_FILE="D:\work\gramener\anand_assignment\project1\tds_project1_automation_agent\data\logs-recent.txt"
+
+# Ensure output directory exists
+mkdir -p "$(dirname "$OUTPUT_FILE")"
+
+# Clear the output file before writing
+> "$OUTPUT_FILE"
+
+# Loop through log-0.log to log-9.log in order
+for i in {0..9}; do
+  log_file="$LOG_DIR/log-$i.log"
+  
+  # Check if the file exists before processing
+  if [[ -f "$log_file" ]]; then
+    head -n 1 "$log_file" >> "$OUTPUT_FILE"
+  else
+    echo "Warning: $log_file not found, skipping."
+  fi
 done
-
-# Remove the temporary file
-rm recent_logs.txt
