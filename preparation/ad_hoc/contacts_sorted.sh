@@ -1,0 +1,1 @@
+jq 'sort_by(.last_name,.first_name)' ../../data/contacts.json > ../../data/contacts-sorted.json
