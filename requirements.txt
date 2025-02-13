@@ -1,9 +1,9 @@
 fastapi
 uvicorn
-aiohttp
+aiohttp-session
 python-multipart
 pillow
 pandas
-sqlite3
+db-sqlite3
 markdown
 beautifulsoup4
