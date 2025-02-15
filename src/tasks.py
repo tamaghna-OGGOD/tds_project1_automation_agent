@@ -56,78 +56,49 @@ class TaskExecutor:
             await asyncio.to_thread(subprocess.run, cmd, check=True)
         except subprocess.CalledProcessError as e:
             raise Exception("Markdown formatting failed") from e
+    async def count_weekdays_task(self,task_description: str):
+        input_file = "../data/dates.txt"
+        output_file = "../data/dates-wednesdays.txt"
 
-    async def count_weekdays_task(self, task_description: str):
-        prompt = '''
-        You are an AI assistant responsible for generating executable Python code that performs specific tasks using the provided file paths. 
-        Your generated code must be structured, optimized, and ready to run in a Python compiler without modification.
-
-        IMPORTANT:
-        - The code should use exactly these file paths:
-            * Input file: "D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates.txt"
-            * Output file: "D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates-wednesdays.txt"
-        - Do not modify these paths; use them exactly as given.
-        - The generated code must handle file reading and writing correctly.
-        - The code should efficiently process the dates and count only the number of Wednesdays.
-        - Only a single integer (the result) should be written to the output file.
-        - Include proper exception handling for missing or malformed data.
-        - No extra text should be output—only the Python code.
-        - The generated code must define a function named "count_wednesdays" that takes two parameters: input_file and output_file.
-
-        Example Task:
-        The file "D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates.txt" contains one date per line in the format YYYY-MM-DD. 
-        Your task is to count the number of Wednesdays in this file and write just the integer count to "D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates-wednesdays.txt".
-
-        Example Code Output: 
-        import datetime
-        from openai import OpenAI
-        import numpy as np
-        from dotenv import load_dotenv
-
-        def count_wednesdays(input_file, output_file):
-            try:
-                with open(input_file, 'r') as f:
-                    dates = f.readlines()
-                
-                wednesday_count = sum(1 for date in dates if datetime.datetime.strptime(date.strip(), "%Y-%m-%d").weekday() == 2)
-                
-                with open(output_file, 'w') as f:
-                    f.write(str(wednesday_count))
-            except Exception as e:
-                with open(output_file, 'w') as f:
-                    f.write("Error: " + str(e))
-
-        count_wednesdays("D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates.txt",
-                        "D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates-wednesdays.txt")
-        '''
         try:
-            # Retrieve the Python code from the LLM.
+            # Read and create a list of all non-empty date strings from the input file.
+            with open(input_file, "r") as f:
+                dates_list = [line.strip() for line in f if line.strip()]
+        except Exception as e:
+            raise Exception("Failed to read input file: " + str(e))
+        
+        # Construct a prompt asking the LLM to calculate the number of Wednesdays directly.
+        prompt = f'''
+        You are an AI assistant and an expert in handling date and time calculations.
+        Given the following list of date strings (each in various formats such as "2025-01-01", "01/02/2025", "January 3, 2025", etc.),
+        calculate the number of dates that fall on a Wednesday.
+        Return only the integer result without any additional text.
+
+        List of dates:
+        {dates_list}
+        '''
+        
+        try:
+            # Retrieve the integer count from the LLM.
             response = await asyncio.to_thread(call_llm, prompt)
-            code = response.strip()
-
-            # Compile and execute the generated Python code.
-            local_scope = {}
-            compiled_code = compile(code, '<llm-generated>', 'exec')
-            exec(compiled_code, local_scope)  # This "runs" the produced code.
-
-            # Define the input and output file paths.
-            input_file = r'D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates.txt'
-            output_file = r'D:/work/gramener/anand_assignment/project1/tds_project1_automation_agent/data/dates-wednesdays.txt'
-
-            # Check if the input file exists.
-            if not os.path.isfile(input_file):
-                raise FileNotFoundError(f"Input file not found: {input_file}")
-
-            # Execute the dynamically produced function in a separate thread.
-            await asyncio.to_thread(local_scope["count_wednesdays"], input_file, output_file)
+            result = response.strip()
+            
+            try:
+                count = int(result)
+            except ValueError:
+                raise ValueError("LLM did not return a valid integer. Response: " + result)
+            
+            # Write the result to the output file.
+            with open(output_file, "w") as f:
+                f.write(str(count))
         except Exception as e:
             raise RuntimeError("Execution failed: " + str(e))
 
 
     async def sort_contacts_task(self, task_description: str):
         # Task A4: Sort contacts in /data/contacts.json by last_name then first_name.
-        input_file = "/data/contacts.json"
-        output_file = "/data/contacts-sorted.json"
+        input_file = "../data/contacts.json"
+        output_file = "../data/contacts-sorted.json"
         try:
             async with await asyncio.to_thread(open, input_file, "r") as f:
                 contacts = json.load(f)
@@ -147,8 +118,8 @@ class TaskExecutor:
 
     async def logs_recent_task(self, task_description: str):
         # Task A5: Write the first line of the 10 most recent .log files in /data/logs/ to /data/logs-recent.txt.
-        folder = "/data/logs/"
-        output_file = "/data/logs-recent.txt"
+        folder = "../data/logs/"
+        output_file = "../data/logs-recent.txt"
         log_files = glob(os.path.join(folder, "*.log"))
         if not log_files:
             raise Exception("No log files found")
@@ -172,7 +143,7 @@ class TaskExecutor:
     async def index_docs_task(self, task_description: str):
         _ = task_description
         # Task A6: Index Markdown files in /data/docs/ mapping filename (without path) to first H1 title.
-        docs_folder = Path("/data/docs/")
+        docs_folder = Path("../data/docs/")
         output_file = docs_folder / "index.json"
         index = {}
         md_files = list(docs_folder.rglob("*.md"))
