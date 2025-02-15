@@ -13,7 +13,7 @@ class TaskRequest(BaseModel):
 @app.post("/run")
 async def run_task(request: TaskRequest):
     try:
-        #await executor.install_and_run_datagen_task("tamaghna.saha@gramener.com")
+        await executor.install_and_run_datagen_task("tamaghna.saha@gramener.com")
         result = await executor.execute_task(request.task)
         return result
     except Exception as e:
