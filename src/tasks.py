@@ -9,7 +9,8 @@ from datetime import datetime
 from glob import glob
 from pathlib import Path
 from shutil import which
-import numpy as np                         
+import numpy as np  
+import shutil                       
 
 import requests
 from utils import call_llm,get_embedding,extract_card_number_with_llm
@@ -50,12 +51,26 @@ class TaskExecutor:
             os.remove(tmp_path)
 
     async def format_markdown_task(self, task_description: str):
-        # Task A2: Format /data/format.md using prettier@3.4.2 (assumed installed) in-place.
-        cmd = ["prettier", "--write", "/data/format.md"]
+    # Task A2: Format /data/format.md using prettier@3.4.2 (assumed installed) in-place.
+        npx_executable = shutil.which("npx") or shutil.which("npx.cmd")
+        if npx_executable is None:
+            raise Exception("npx executable not found. Please install Node.js and ensure npx is in your PATH")
+            
+        cmd = [npx_executable, "prettier@3.4.2", "--write", "../data/format.md"]
         try:
-            await asyncio.to_thread(subprocess.run, cmd, check=True)
+            await asyncio.to_thread(
+                subprocess.run,
+                cmd,
+                check=True,
+                capture_output=True,  # Capture stdout and stderr for debugging
+                text=True
+            )
+        except FileNotFoundError as e:
+            raise Exception("npx executable not found. Please install Node.js and ensure npx is in your PATH") from e
         except subprocess.CalledProcessError as e:
-            raise Exception("Markdown formatting failed") from e
+            # Include output details in the exception message for troubleshooting
+            error_msg = f"Markdown formatting failed (exit code {e.returncode}). Output:\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}"
+            raise Exception(error_msg) from e
     async def count_weekdays_task(self,task_description: str):
         input_file = "../data/dates.txt"
         output_file = "../data/dates-wednesdays.txt"
@@ -363,31 +378,31 @@ class TaskExecutor:
 
         for task in tasks_to_run:
             task_lower = task.lower()
-            if task_lower == "format_markdown_task":
+            if task_lower == "`format_markdown_task`":
                 await self.format_markdown_task(task_description)
                 results.append("Task A2 executed successfully")
-            elif task_lower == "count_weekdays_task":
+            elif task_lower == "`count_weekdays_task`":
                 await self.count_weekdays_task(task_description)
                 results.append("Task A3 executed successfully")
-            if task_lower == "sort_contacts_task":
+            if task_lower == "`sort_contacts_task`":
                 await self.count_weekdays_task(task_description)
                 results.append("Task A4 executed successfully")
-            elif task_lower == "logs_recent_task":
+            elif task_lower == "`logs_recent_task":
                 await self.logs_recent_task(task_description)
                 results.append("Task A5 executed successfully")
-            elif task_lower == "index_docs_task":
+            elif task_lower == "index_docs_task`":
                 await self.index_docs_task(task_description)
                 results.append("Task A6 executed successfully")
-            elif task_lower == "extract_email_task":
+            elif task_lower == "`extract_email_task`":
                 await self.extract_email_task(task_description)
                 results.append("Task A7 executed successfully")
-            elif task_lower == "credit_card_task":
+            elif task_lower == "`credit_card_task`":
                 await self.credit_card_task(task_description)
                 results.append("Task A8 executed successfully")
-            elif task_lower == "comments_similarity_task":
+            elif task_lower == "`comments_similarity_task`":
                 await self.comments_similarity_task(task_description)
                 results.append("Task A9 executed successfully")
-            elif task_lower == "ticket_sales_task":
+            elif task_lower == "`ticket_sales_task`":
                 await self.ticket_sales_task(task_description)
                 results.append("Task A10 executed successfully")
             else:
