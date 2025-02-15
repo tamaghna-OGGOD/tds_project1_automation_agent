@@ -1,14 +1,20 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from tasks import TaskExecutor
 from pathlib import Path
+
 
 app = FastAPI()
 executor = TaskExecutor()
 
+class TaskRequest(BaseModel):
+    task: str
+
 @app.post("/run")
-async def run_task(task: str):
+async def run_task(request: TaskRequest):
     try:
-        result = await executor.execute_task(task)
+        await executor.install_and_run_datagen_task("tamaghna.saha@gramener.com")
+        result = await executor.execute_task(request.task)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
